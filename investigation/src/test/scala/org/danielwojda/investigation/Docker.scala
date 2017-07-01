@@ -26,7 +26,7 @@ object Docker {
     val portBindings = new Ports()
     portBindings.bind(tcp8080, Ports.Binding.bindPort(hostPort))
 
-    val container = dockerClient.createContainerCmd("akka-investigation-server:0.1-SNAPSHOT")
+    val container = dockerClient.createContainerCmd("wojda/server:latest")
       .withTty(true)
       .withExposedPorts(tcp8080)
       .withPortBindings(portBindings)
@@ -44,7 +44,7 @@ object Docker {
   }
 
   def startAkkaClient(downstreamDependencyIpAddress: String): Containerized = {
-    val container = dockerClient.createContainerCmd("akka-investigation-client:0.1-SNAPSHOT")
+    val container = dockerClient.createContainerCmd("wojda/akka-client:latest")
       .withTty(true)
       .withName("akka-client")
       .withExtraHosts(s"server.com:$downstreamDependencyIpAddress")

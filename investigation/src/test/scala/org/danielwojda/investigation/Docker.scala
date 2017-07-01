@@ -2,14 +2,16 @@ package org.danielwojda.investigation
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
-import akka.http.scaladsl.model.{HttpRequest, Uri}
+import akka.http.scaladsl.model._
 import akka.stream.Materializer
 import akka.util.ByteString
 import com.github.dockerjava.api.model.{ExposedPort, Ports}
 import com.github.dockerjava.core.command.ExecStartResultCallback
 import com.github.dockerjava.core.{DefaultDockerClientConfig, DockerClientBuilder}
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.duration._
+import scala.language.postfixOps
+import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.util.Try
 
 object Docker {
@@ -38,23 +40,25 @@ object Docker {
 
     val assignedIpAddress = dockerClient.inspectContainerCmd(container.getId).exec().getNetworkSettings.getNetworks.get("bridge").getIpAddress
 
-    new Server(hostPort, assignedIpAddress) with Containerized {
-        override val containerId: String = container.getId
-      }
+    Server(hostPort, assignedIpAddress, container.getId)
   }
 
-  def startAkkaClient(downstreamDependencyIpAddress: String): Containerized = {
+  def startAkkaClient(downstreamDependencyIpAddress: String, hostPort: Int): AkkaClient with Containerized = {
+    val tcp8080 = ExposedPort.tcp(8080)
+    val portBindings = new Ports()
+    portBindings.bind(tcp8080, Ports.Binding.bindPort(hostPort))
+
     val container = dockerClient.createContainerCmd("wojda/akka-client:latest")
       .withTty(true)
       .withName("akka-client")
+      .withExposedPorts(tcp8080)
+      .withPortBindings(portBindings)
       .withExtraHosts(s"server.com:$downstreamDependencyIpAddress")
       .exec()
 
     dockerClient.startContainerCmd(container.getId).exec()
 
-    new Containerized {
-      override val containerId: String = container.getId
-    }
+    AkkaClient(container.getId)
   }
 
 
@@ -74,13 +78,25 @@ object Docker {
 }
 
 
-case class Server(boundPort: Int, ipAddress: String) {
+case class Server(boundPort: Int, ipAddress: String, containerId: String) extends Containerized{
   def receivedRequests()(implicit actorSystem: ActorSystem, mat: Materializer, ec: ExecutionContext): Future[Long] = {
     Http().singleRequest(HttpRequest(uri = Uri(s"http://localhost:$boundPort/counter")))
       .flatMap(response => response.entity.dataBytes.runFold(ByteString(""))(_ ++ _))
       .map(responseBody => responseBody.utf8String.toLong)
   }
 
+}
+
+case class AkkaClient(containerId: String) extends Containerized{
+  def startSendingRequests()(implicit actorSystem: ActorSystem, mat: Materializer, ec: ExecutionContext): StatusCode = {
+    val futureResponse = Http().singleRequest(HttpRequest(uri = Uri("http://localhost:8080/start"), method = HttpMethods.PUT))
+    Await.result(futureResponse, 1 second).status
+  }
+
+  def stopSendingRequests()(implicit actorSystem: ActorSystem, mat: Materializer, ec: ExecutionContext): Unit = {
+    val futureResponse = Http().singleRequest(HttpRequest(uri = Uri("http://localhost:8080/stop"), method = HttpMethods.PUT))
+    assert(Await.result(futureResponse, 1 second).status.isSuccess() )
+  }
 }
 
 trait Containerized {

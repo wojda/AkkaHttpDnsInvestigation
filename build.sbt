@@ -34,6 +34,7 @@ lazy val client = project
   .settings(daemonUser in Docker := "root")
   .settings(packageName in Docker := "wojda/akka-client")
   .settings(dockerCommands ++= Seq(Cmd("RUN", "echo networkaddress.cache.ttl=0 >> /etc/java-8-openjdk/security/java.security")))
+  .settings(dockerCommands ++= Seq(Cmd("RUN", "echo networkaddress.cache.negative.ttl=0 >> /etc/java-8-openjdk/security/java.security")))
   .settings(javaOptions in Universal ++= Seq("-Dsun.net.inetaddr.ttl=0"))
   .settings(dockerExposedPorts := Seq(8080))
   .settings(dockerUpdateLatest := true)

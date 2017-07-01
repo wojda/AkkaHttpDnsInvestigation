@@ -1,4 +1,5 @@
-package org.danielwojda.investigation
+package org.danielwojda.server
+
 import java.util.concurrent.atomic.AtomicLong
 
 import akka.actor.ActorSystem
@@ -9,10 +10,8 @@ import akka.stream.ActorMaterializer
 
 import scala.io.StdIn
 
-object WebServer {
-  def main(args: Array[String]) {
-
-    implicit val system = ActorSystem("my-system")
+object ServerApp extends App{
+    implicit val system = ActorSystem("server-system")
     implicit val materializer = ActorMaterializer()
     implicit val executionContext = system.dispatcher
 
@@ -37,5 +36,4 @@ object WebServer {
     bindingFuture
       .flatMap(_.unbind()) // trigger unbinding from the port
       .onComplete(_ => system.terminate()) // and shutdown when done
-  }
 }

@@ -9,7 +9,26 @@ The project was created to help in investigation of Akka Http client issue.
 $ sbt ";docker:publishLocal; test"
 
 The command will create two docker images: wojda/server and wojda/akka-client. 
-Both are mandatory for running end-to-end AkkaHttpDnsSpec.
-The test can be found here: org.danielwojda.investigation.AkkaHttpDnsSpec.
+Both are mandatory for running end-to-end AkkaHttpDnsSpec. The spec contains two test, 
+one healthy to prove that setup is correct, and second failing test that shows that Akka Http client does not respect DNS positive ttl.
 
-Currently the test is failing and that is the purpose of this project.
+
+
+# Components
++-----------------+                +------------+                  +-------------+
+|                 |  PUT /start    |            |   GET /hostname  |             |
+| AkkaHttpDnsSpec | -------------> | AkkaClient | ---------------> |  Server_v1  |
+|                 |                |            |                  |             |
++-----------------+                +------------+                  +-------------+
+
+                                                                   +-------------+
+                                                                   |             |
+                                                                   |  Server_v2  |
+                                                                   |             |
+                                                                   +-------------+
+
+
+
+
+
+

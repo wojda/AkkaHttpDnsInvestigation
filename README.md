@@ -6,7 +6,9 @@ The project was created to help in investigation of Akka Http client issue.
 * docker 
 
 # How to run it
+```
 $ sbt ";docker:publishLocal; test"
+```
 
 The command will create two docker images: wojda/server and wojda/akka-client. 
 Both are mandatory for running end-to-end AkkaHttpDnsSpec. The spec contains two test, 

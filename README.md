@@ -15,6 +15,7 @@ one healthy to prove that setup is correct, and second failing test that shows t
 
 
 # Components
+```
 +-----------------+                +------------+                  +-------------+
 |                 |  PUT /start    |            |   GET /hostname  |             |
 | AkkaHttpDnsSpec | -------------> | AkkaClient | ---------------> |  Server_v1  |
@@ -26,7 +27,7 @@ one healthy to prove that setup is correct, and second failing test that shows t
                                                                    |  Server_v2  |
                                                                    |             |
                                                                    +-------------+
-
+```
 
 
 
